@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor.SceneManagement;
 
 public enum Direction {
     LEFT, 
@@ -17,6 +18,8 @@ public class GenerateChunks : MonoBehaviour
     public GameObject terrainPrefab;
     public GameObject poolObject;
 
+    public Material meshMat;
+
     public int viewDist = 10;
     public int chunkSize = 100;
     public int detail = 10;
@@ -27,6 +30,8 @@ public class GenerateChunks : MonoBehaviour
 
     public bool debugEdges = false;
     public bool debugVertices = false;
+
+    [SerializeField] private bool RESET = false;
     /***********************/
 
     /*Terrain-specific values*/
@@ -34,21 +39,22 @@ public class GenerateChunks : MonoBehaviour
     private int[] currentChunkCoords;
     private float rand;
     private ObjectPool chunkPool;
-    private ObjectPool[][] foliagePools;
+    private List<ObjectPool[]> foliagePools;
     /*************************/
 
     void Awake() {
-        init();
+        StartCoroutine(init());
     }
 
-    void init()
+    IEnumerator init(bool inEditor = false)
     {
-        DestroyAllChildren();
+        if (inEditor) yield return null;
+        DestroyAllChildren(inEditor);
         rand = Random.Range(0f, 1f);
         initGenerateNewChunks();
     }
 
-    private void DestroyAllChildren()
+    private void DestroyAllChildren(bool inEditor)
     {
         for (int i = 0; i < gameObject.transform.childCount; i++)
         {
@@ -89,10 +95,10 @@ public class GenerateChunks : MonoBehaviour
         GenerateFoliage[] foliageGenerators = terrainPrefab.GetComponents<GenerateFoliage>();
         if (foliageGenerators != null)
         {
-            foliagePools = new ObjectPool[((2*viewDist)+1)*((2 * viewDist) + 1)][];
+            foliagePools = new List<ObjectPool[]>();
             for (int i = 0; i < ((2 * viewDist) + 1) * ((2 * viewDist) + 1); i++)
             {
-                foliagePools[i] = new ObjectPool[foliageGenerators.Length];
+                foliagePools.Add(new ObjectPool[foliageGenerators.Length]);
                 for (int j = 0; j < foliageGenerators.Length; j++)
                 {
                     foliagePools[i][j] = Instantiate(poolObject, Vector3.zero, Quaternion.identity).GetComponent<ObjectPool>();
@@ -124,6 +130,10 @@ public class GenerateChunks : MonoBehaviour
         terrainLogic.scale = terrainScale;
         terrainLogic.rand = rand;
         terrainLogic.setSeed(SEED);
+        if (meshMat)
+        {
+            newSection.GetComponent<MeshRenderer>().material = meshMat;
+        }
 
         //DEBUG SIDE VERTS
         terrainLogic.showSideVerts = debugEdges;
@@ -151,9 +161,20 @@ public class GenerateChunks : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update() {
+    void Update()
+    {
         //Updates chunks when player crosses chunk boundry
         verifyChunkState();
+    }
+
+    void OnValidate()
+    {
+        if (RESET)
+        {
+            RESET = false;
+            //CODE TO REGENERATE THE MESH HERE
+            StartCoroutine(init(true));
+        }
     }
 
     void verifyChunkState() {
@@ -174,50 +195,97 @@ public class GenerateChunks : MonoBehaviour
         int j;
         switch(dir) {
             case Direction.RIGHT:
-                currentChunkCoords[0]++;
-                for (int i = dist-1; i >= 0; i--) { //DESTROY LEFT
-                    DestroyTerrainSection(terrain[i]);
-                    terrain.RemoveAt(i);
-                }
-                for (int i = dist * (dist-1); i < dist * dist; i++) //CREATE ON RIGHT
                 {
-                    GameObject newSection = createChunk(currentChunkCoords[0] + viewDist, currentChunkCoords[1] + (i - (dist * (dist-1)))-viewDist, i);
+                    currentChunkCoords[0]++;
+                    ObjectPool[][] oldIs = new ObjectPool[dist][];
+                    int count = 0;
+                    for (int i = dist - 1; i >= 0; i--)
+                    { //DESTROY LEFT
+                        DestroyTerrainSection(terrain[i]);
+                        oldIs[count] = foliagePools[i];
+                        count++;
+                        terrain.RemoveAt(i);
+                        foliagePools.RemoveAt(i);
+                    }
+                    count = 1;
+                    for (int i = dist * (dist - 1); i < dist * dist; i++) //CREATE ON RIGHT
+                    {
+                        foliagePools.Insert(i, oldIs[dist - count]);
+                        GameObject newSection = createChunk(currentChunkCoords[0] + viewDist, currentChunkCoords[1] + (i - (dist * (dist - 1))) - viewDist, i);
+                        count++;
+                    }
                 }
                 break;
             case Direction.LEFT:
-                currentChunkCoords[0]--;
-                for (int i = (dist * dist) - 1; i >= dist * (dist-1); i--) {
-                    DestroyTerrainSection(terrain[i]);
-                    terrain.RemoveAt(i);
-                }
-                for (int i = 0; i < dist; i++)
                 {
-                    GameObject newSection = createChunk(currentChunkCoords[0] - viewDist, currentChunkCoords[1] + i - viewDist, i);
+                    currentChunkCoords[0]--;
+                    ObjectPool[][] oldIs = new ObjectPool[dist][];
+                    int count = 0;
+                    int x = (dist * dist) - 1;
+                    int y = dist * (dist - 1);
+                    for (int i = x; i >= y; i--)
+                    {
+                        DestroyTerrainSection(terrain[i]);
+                        oldIs[count] = foliagePools[i];
+                        count++;
+                        terrain.RemoveAt(i);
+                        foliagePools.RemoveAt(i);
+                    }
+                    count = 1;
+                    for (int i = 0; i < dist; i++)
+                    {
+                        foliagePools.Insert(i, oldIs[dist - count]);
+                        GameObject newSection = createChunk(currentChunkCoords[0] - viewDist, currentChunkCoords[1] + i - viewDist, i);
+                        count++;
+                    }
                 }
                 break;
             case Direction.UP:
-                currentChunkCoords[1]++;
-                for (int i = (dist*dist)-dist; i >= 0; i-=dist) { //DESTROY DOWN
-                    DestroyTerrainSection(terrain[i]);
-                    terrain.RemoveAt(i);
-                }
-                j = 0;
-                for (int i = dist-1; i < dist * dist; i+=dist) //CREATE ON TOP
                 {
-                    GameObject newSection = createChunk(currentChunkCoords[0] + j - viewDist, currentChunkCoords[1] + viewDist, i);
-                    j++;
+                    currentChunkCoords[1]++;
+                    ObjectPool[][] oldIs = new ObjectPool[dist][];
+                    int count = 0;
+                    for (int i = (dist * dist) - dist; i >= 0; i -= dist)
+                    { //DESTROY DOWN
+                        DestroyTerrainSection(terrain[i]);
+                        oldIs[count] = foliagePools[i];
+                        count++;
+                        terrain.RemoveAt(i);
+                        foliagePools.RemoveAt(i);
+                    }
+                    j = 0;
+                    count = dist-1;
+                    for (int i = dist - 1; i < dist * dist; i += dist) //CREATE ON TOP
+                    {
+                        foliagePools.Insert(i, oldIs[count]);
+                        GameObject newSection = createChunk(currentChunkCoords[0] + j - viewDist, currentChunkCoords[1] + viewDist, i);
+                        count--;
+                        j++;
+                    }
                 }
                 break;
             case Direction.DOWN:
-                currentChunkCoords[1]--;
-                for (int i = (dist*dist) - 1; i >= dist-1; i-=dist) {
-                    DestroyTerrainSection(terrain[i]);
-                    terrain.RemoveAt(i);
-                }
-                j = 0;
-                for (int i = 0; i <= (dist*dist)-dist; i+=dist) {
-                    GameObject newSection = createChunk(currentChunkCoords[0] + j - viewDist, currentChunkCoords[1] - viewDist, i);
-                    j++;
+                {
+                    currentChunkCoords[1]--;
+                    ObjectPool[][] oldIs = new ObjectPool[dist][];
+                    int count = 0;
+                    for (int i = (dist * dist) - 1; i >= dist - 1; i -= dist)
+                    {
+                        DestroyTerrainSection(terrain[i]);
+                        oldIs[count] = foliagePools[i];
+                        count++;
+                        terrain.RemoveAt(i);
+                        foliagePools.RemoveAt(i);
+                    }
+                    j = 0;
+                    count = dist-1;
+                    for (int i = 0; i <= (dist * dist) - dist; i += dist)
+                    {
+                        foliagePools.Insert(i, oldIs[count]);
+                        GameObject newSection = createChunk(currentChunkCoords[0] + j - viewDist, currentChunkCoords[1] - viewDist, i);
+                        count--;
+                        j++;
+                    }
                 }
                 break;
         }

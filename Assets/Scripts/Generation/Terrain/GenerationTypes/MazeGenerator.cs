@@ -11,9 +11,12 @@ public class MazeGenerator : GenerateTerrain
     [SerializeField] private Texture2D sourceTex;
     /* * * * * * * * * * * * */
 
-    private int oldVertLength = 0;
-    private int TrueOldVertLength;
+    [HideInInspector] public bool hasFloor = true;
 
+    private int oldVertLength = 0;
+    private int TrueOldVertLength = 0;
+
+    public void setSourceTex(Texture2D inTex) { sourceTex = inTex; }
     public int getSourceTextWidth() { return sourceTex.width * unitSize; }
     public int getSourceTextHeight() { return sourceTex.height * unitSize; }
 
@@ -23,16 +26,20 @@ public class MazeGenerator : GenerateTerrain
         xSize = getSourceTextWidth();
         zSize = getSourceTextHeight();
 
-        int x = 0;
-        //Generate a Flat Baseplate
-        for (int i = 0; i <= partitions; i++) {
-            for (int j = 0; j <= partitions; j++) {
-                vertices[x] = new Vector3((xSize / partitions) * i, 0, (zSize / partitions) * j);
-                x++;
+        if (hasFloor)
+        {
+            int x = 0;
+            //Generate a Flat Baseplate
+            for (int i = 0; i <= partitions; i++)
+            {
+                for (int j = 0; j <= partitions; j++)
+                {
+                    vertices[x] = new Vector3((xSize / partitions) * i, 0, (zSize / partitions) * j);
+                    x++;
+                }
             }
         }
         TrueOldVertLength = vertices.Length;
-
         GenerateMaze();
     }
 
@@ -83,16 +90,20 @@ public class MazeGenerator : GenerateTerrain
 
     protected override void CreateTris()
     {
-        base.CreateTris();
-
-        int j = triangles.Length;
+        int j;
+        if (hasFloor)
+        {
+            base.CreateTris();
+            j = triangles.Length;
+        }
+        else j = 0;
 
         //(((vertices.Length - TrueOldVertLength)/20)*30):
         //  20 = num vertices per unitSize cube
         //  30 = num triangles per unitSize cube
-        int[] newTris = new int[triangles.Length + (((vertices.Length - TrueOldVertLength)/20)*30)];
+        int[] newTris = new int[j + (((vertices.Length - TrueOldVertLength)/20)*30)];
 
-        for (int i = 0; i < triangles.Length; i++) newTris[i] = triangles[i]; //Primitive re-allocation of array
+        for (int i = 0; i < j; i++) newTris[i] = triangles[i]; //Primitive re-allocation of array
         triangles = newTris;
         for (int k = TrueOldVertLength; k < vertices.Length; k+=20)
         {

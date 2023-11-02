@@ -37,8 +37,6 @@ public class GenerateTerrain : MonoBehaviour
     private bool bInit = false;
     private int SEED = 12345678;
 
-    private bool bf = false;
-
     // Start is called before the first frame update
     void Start() {
         
@@ -238,10 +236,8 @@ public class GenerateTerrain : MonoBehaviour
         if (showVerts) {
             for (int i = 0; i < vertices.Length; i++) {
                 Gizmos.color = new Color(uvs[i].x * 10, 0, uvs[i].y * 10);
-                if (!bf) Debug.Log(uvs[i].x + " || " + uvs[i].y);
                 Gizmos.DrawSphere(gameObject.transform.position + vertices[i], 1.0f);
             }
-            bf = true;
         }
 
         //Visual color-coded representation of each side edge of each chunk (in vertices)
