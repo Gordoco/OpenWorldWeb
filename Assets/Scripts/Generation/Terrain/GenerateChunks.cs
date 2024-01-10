@@ -31,6 +31,8 @@ public class GenerateChunks : MonoBehaviour
     public bool debugEdges = false;
     public bool debugVertices = false;
 
+    public bool shouldExpand = true;
+
     [SerializeField] private bool RESET = false;
     /***********************/
 
@@ -182,6 +184,7 @@ public class GenerateChunks : MonoBehaviour
         Checks each direction, loops through each chunk movement (BAD for teleportation implementations:
         O(N) where N is # of chunks teleported across, O(N^2) for 2 axis teleport)
         */
+        if (!shouldExpand) return;
         int staticSpace = Mathf.FloorToInt(viewDist/2f);
         if (getChunkCoords()[0] > currentChunkCoords[0] + staticSpace) for (int i = 0; i < getChunkCoords()[0] - currentChunkCoords[0]; i++) updateChunks(Direction.RIGHT);
         if (getChunkCoords()[0] < currentChunkCoords[0] - staticSpace) for (int i = 0; i < currentChunkCoords[0] - getChunkCoords()[0]; i++) updateChunks(Direction.LEFT);
