@@ -2,6 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/**
+ * ### MazeGenerator
+ * -------
+ * Class which adapts the GenerateTerrain archetype to utilize a png image in order to construct maze-like structures
+ */
 public class MazeGenerator : GenerateTerrain
 {
     /* EDITOR EXPOSED VALUES */
@@ -16,10 +21,31 @@ public class MazeGenerator : GenerateTerrain
     private int oldVertLength = 0;
     private int TrueOldVertLength = 0;
 
-    public void setSourceTex(Texture2D inTex) { sourceTex = inTex; }
-    public int getSourceTextWidth() { return sourceTex.width * unitSize; }
-    public int getSourceTextHeight() { return sourceTex.height * unitSize; }
+    /**
+     * #### void setSourceTex
+     * Mutator for the Texture2D value
+     */
+    public void setSourceTex(Texture2D inTex) 
+    { sourceTex = inTex; }
 
+    /**
+     * #### int getSourceTextWidth
+     * Accessor for the Texture2D width
+     */
+    public int getSourceTextWidth() 
+    { return sourceTex.width * unitSize; }
+
+    /**
+     * #### int getSourceTextHeight
+     * Accessor for the Texture2D height
+     */
+    public int getSourceTextHeight() 
+    { return sourceTex.height * unitSize; }
+
+    /**
+     * #### void CreateVerts
+     * Overriden method from GenerateTerrain which creates the baseplate and initializes maze generation
+     */
     protected override void CreateVerts()
     {
         if (sourceTex == null) return;
@@ -43,6 +69,10 @@ public class MazeGenerator : GenerateTerrain
         GenerateMaze();
     }
 
+    /**
+     * #### void CreateUVs
+     * Overriden method from GenerateTerrain which maps the texture coordinates to the generated terrain
+     */
     protected override void CreateUVs()
     {
         createBaseUVs(); //Setup Baseplate Rendering
@@ -52,6 +82,10 @@ public class MazeGenerator : GenerateTerrain
         //Debug.Log(vertices.Length);
     }
 
+    /**
+     * #### void createBaseUVs
+     * Overriden method from GenerateTerrain which maps the base texture coordinates
+     */
     private void createBaseUVs()
     {
         uvs = new Vector2[TrueOldVertLength];
@@ -63,6 +97,10 @@ public class MazeGenerator : GenerateTerrain
         }
     }
 
+    /**
+     * #### void createWallUVs
+     * Overriden method from GenerateTerrain which maps the wall texture coordinates
+     */
     private void createWallUVs()
     {
         //INEFFICIENT BUT USEFUL FOR UNDERSTANDING
@@ -88,6 +126,10 @@ public class MazeGenerator : GenerateTerrain
         }
     }
 
+    /**
+     * #### void CreateTris
+     * Overriden method from GenerateTerrain which maps the vertex indecies together into graphical triangles for rendering
+     */
     protected override void CreateTris()
     {
         int j;
@@ -117,6 +159,10 @@ public class MazeGenerator : GenerateTerrain
 
     //Initial attempt to abstract triangle generation
     //Need to standardize vertex ordering
+    /**
+     * #### void createTrianglesFromVertexIndex
+     * Abstraction of triangle generation for range of vertex indecies
+     */
     private void createTrianglesFromVertexIndex(int[] tris, int j /* start tri index */, int k /* start vert index */)
     {
         tris[j + 0] = k + 0;
@@ -128,6 +174,11 @@ public class MazeGenerator : GenerateTerrain
         tris[j + 5] = k + 3;
     }
 
+    /**
+     * #### void GenerateMaze
+     * Utilizes helper method to generate a box mesh on the terrain
+     * in a corresponding place to each black pixel in the input image
+     */
     void GenerateMaze()
     { 
         if (sourceTex == null) return;
@@ -147,6 +198,10 @@ public class MazeGenerator : GenerateTerrain
         }
     }
 
+    /**
+     * #### void GenerateBoxOnMesh
+     * Helper method for GenerateMaze to create a box of specified size on the mesh
+     */
     void GenerateBoxOnMesh(Vector3 topLeft, float x, float z)
     {
         oldVertLength = vertices.Length;

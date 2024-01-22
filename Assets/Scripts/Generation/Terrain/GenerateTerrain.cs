@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter)), RequireComponent(typeof(MeshCollider))]
+/**
+ * ### GenerateTerrain
+ * -------
+ * Class which handles the terrain generation for a specific TerrainSection within the array of terrain chunks
+ */
 public class GenerateTerrain : MonoBehaviour
 {
     Mesh mesh;
@@ -42,6 +47,10 @@ public class GenerateTerrain : MonoBehaviour
         
     }
 
+    /**
+     * #### void initialize
+     * Creates the section of terrain using the prescribed algoritms
+     */
     public void initialize(ObjectPool[] foliagePools) {
         InitializeComp();
         foliageGenerators = GetComponents<GenerateFoliage>();
@@ -54,6 +63,10 @@ public class GenerateTerrain : MonoBehaviour
         }
     }
 
+    /**
+     * #### void getYAtLocation
+     * Helper method for utilizing Linecasts to determine the precise height at any x, y (x, z in world space) location
+     */
     public float getYAtLocation(Vector2 Location)
     {
         Vector3 low = new Vector3(Location.x, -99999, Location.y);
@@ -64,8 +77,17 @@ public class GenerateTerrain : MonoBehaviour
         return info.point.y;
     }
 
-    public void setSeed(int inSeed) { SEED = inSeed; }
+    /**
+     * #### void setSeed
+     * Mutator method for the SEED value
+     */
+    public void setSeed(int inSeed) 
+    { SEED = inSeed; }
 
+    /**
+     * #### void InitializeComp
+     * Sets up mesh component for terrain generation and vertex/triangle insertion
+     */
     void InitializeComp() {
         //Initialization
         if (mesh == null) mesh = new Mesh();
@@ -85,6 +107,10 @@ public class GenerateTerrain : MonoBehaviour
         bInit = true;
     }
 
+    /**
+     * #### void AddSection
+     * Interface method for use within GenerateChunks
+     */
     public void AddSection() {
         if (!bInit) {
             InitializeComp();
@@ -92,6 +118,10 @@ public class GenerateTerrain : MonoBehaviour
     }
 
     //Basic data structure for easy vert passing between chunks
+    /**
+     * #### struct Side
+     * Data structure for passing all relevent data to represent one side of the TerrainSection
+     */
     public struct Side {
         public Vector3[] verts;
         public int[] i;
@@ -99,6 +129,10 @@ public class GenerateTerrain : MonoBehaviour
     }
 
     //Main mesh creation logic
+    /**
+     * #### void CreateShape
+     * Master method for creating the terrain
+     */
     void CreateShape() {
         vertices = new Vector3[(partitions + 1) * (partitions + 1)]; //Create square vertex container
         CreateSideContainers();
@@ -107,6 +141,10 @@ public class GenerateTerrain : MonoBehaviour
         CreateUVs();
     }
 
+    /**
+     * #### void CreateSideContainers
+     * Initialized sub vertex arrays for holding the side vertices for easy alignment
+     */
     void CreateSideContainers() {
         sidedVertices = new Vector3[4][];
         sidedIndexs = new int[4][];
@@ -117,6 +155,10 @@ public class GenerateTerrain : MonoBehaviour
         }
     }
 
+    /**
+     * #### float[] GetParams
+     * Gets information from array indexes
+     */
     float[] GetParams(int i, int j)
     {
         float[] arr = new float[2];
@@ -125,11 +167,19 @@ public class GenerateTerrain : MonoBehaviour
         return arr;
     }
 
+    /**
+     * #### void Y_Operator
+     * Virtual method to allow customization of the specifics of the terrain height choices
+     */
     protected virtual float Y_Operator(float inY)
     {
         return inY;
     }
 
+    /**
+     * #### void CreateUVs
+     * Maps the texture coordinates to the newly generated terrain
+     */
     protected virtual void CreateUVs()
     {
         uvs = new Vector2[vertices.Length];
@@ -139,6 +189,10 @@ public class GenerateTerrain : MonoBehaviour
         }
     }
 
+    /**
+     * #### void CreateVerts
+     * Creates the verticies of the terrain in a grid in x, z space and using perlin noise for the y height
+     */
     protected virtual void CreateVerts() {
         int count0 = 0;
         int count1 = 0;
@@ -186,6 +240,10 @@ public class GenerateTerrain : MonoBehaviour
         }
     }
 
+    /**
+     * #### void CreateTris
+     * Creates triangles for rendering from the vertex array
+     */
     protected virtual void CreateTris() {
         triangles = new int[partitions*partitions*6];
 
@@ -210,6 +268,10 @@ public class GenerateTerrain : MonoBehaviour
     }
 
     //Re-init mesh
+    /**
+     * #### void UpdateMesh
+     * Safely regenerates terrain at runtime
+     */
     void UpdateMesh() {
         //Reset mesh for future use
         mesh.Clear();
@@ -227,6 +289,11 @@ public class GenerateTerrain : MonoBehaviour
     }
 
     //Editor Preview/Debug Method
+    /**
+     * #### void OnDrawGizmos
+     * Unity engine event which is called for debugging purposes
+     * Draws debugging icons on vertices 
+     */
     private void OnDrawGizmos() {
         if (vertices == null) {
             return;

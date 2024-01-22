@@ -2,6 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/**
+ * ### PlayerMove
+ * -------
+ * Simple class for player movement
+ */
 public class PlayerMove : MonoBehaviour
 {
     public float speed = 6.0f;
@@ -9,6 +14,11 @@ public class PlayerMove : MonoBehaviour
     public float gravity = 20.0f;
     private Vector3 moveDirection = Vector3.zero;
     
+    /**
+     * #### Update
+     * Unity engine event called every frame
+     * Handles user I/O
+     */
     void Update() {
         CharacterController controller = GetComponent<CharacterController>();
         if (controller.isGrounded) {

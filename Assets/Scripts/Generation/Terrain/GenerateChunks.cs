@@ -11,6 +11,11 @@ public enum Direction {
 }
 
 [ExecuteInEditMode]
+/**
+ * ### GenerateChunks
+ * -------
+ * Class for managing terrain sections in a cohesive way procedurally
+ */
 public class GenerateChunks : MonoBehaviour
 {
     /*Editor Exposed Values*/
@@ -44,10 +49,18 @@ public class GenerateChunks : MonoBehaviour
     private List<ObjectPool[]> foliagePools;
     /*************************/
 
+    /**
+     * #### void Awake
+     * Unity engine event which launches a seperate thread for in editor initialization
+     */
     void Awake() {
         StartCoroutine(init());
     }
 
+    /**
+     * #### IEnumerator init
+     * Multi-threaded method to initialize within editor
+     */
     IEnumerator init(bool inEditor = false)
     {
         if (inEditor) yield return null;
@@ -56,6 +69,10 @@ public class GenerateChunks : MonoBehaviour
         initGenerateNewChunks();
     }
 
+    /**
+     * #### void DestroyAllChildren
+     * Destroys the generated terrain sections (chunks)
+     */
     private void DestroyAllChildren(bool inEditor)
     {
         for (int i = 0; i < gameObject.transform.childCount; i++)
@@ -64,6 +81,10 @@ public class GenerateChunks : MonoBehaviour
         }
     }
 
+    /**
+     * #### int[] getChunkCoords
+     * Retrieves the transformed coordinates of the player in terms of the chunk array
+     */
     int[] getChunkCoords() {
         //Error on negative numbers
         int oneI = (int)(Player.transform.position.x/chunkSize);
@@ -77,6 +98,10 @@ public class GenerateChunks : MonoBehaviour
     }
 
     //Pre-truncation comparison for player position
+    /**
+     * #### int fixNegativeZero
+     * Pre-truncation comparison for player position to avoid rounding error
+     */
     int fixNegativeZero(float pos, int oneI) {
         float oneF = pos/chunkSize;
         if (oneF < oneI) return oneI-1;
@@ -84,6 +109,10 @@ public class GenerateChunks : MonoBehaviour
     }
 
     //Initialization method for creating chunk grid
+    /**
+     * #### void initGenerateNewChunks
+     * Initialization method for the TerrainSection array, creates the landscape
+     */
     void initGenerateNewChunks() {
         currentChunkCoords = getChunkCoords();
 
@@ -119,6 +148,10 @@ public class GenerateChunks : MonoBehaviour
     }
 
     //Logic handler for new chunk creation
+    /**
+     * #### GameObject createChunk
+     * Utilises the ObjectPool to retrieve and initialize a new chunk in its appropriate position
+     */
     GameObject createChunk(int i, int j, int x) {
         GameObject newSection = chunkPool.getObject(); //Uses Pooled Object Implementation
 
@@ -156,6 +189,10 @@ public class GenerateChunks : MonoBehaviour
         return newSection;
     }
 
+    /**
+     * #### void resizeChunks
+     * Ensures square terrain
+     */
     protected virtual void resizeChunks(GenerateTerrain terrainLogic)
     {
         terrainLogic.xSize = chunkSize;
@@ -163,12 +200,21 @@ public class GenerateChunks : MonoBehaviour
     }
 
     // Update is called once per frame
+    /**
+     * #### void Update
+     * Unity editor event called every frame
+     * Calls verification method to check for Player movement
+     */
     void Update()
     {
         //Updates chunks when player crosses chunk boundry
         verifyChunkState();
     }
 
+    /**
+     * #### void OnValidate
+     * Checks for editor value RESET in order to allow editor regeneration of terrain
+     */
     void OnValidate()
     {
         if (RESET)
@@ -179,6 +225,10 @@ public class GenerateChunks : MonoBehaviour
         }
     }
 
+    /**
+     * #### void verifyChunkState
+     * Checks if Player's transformed chunk coordinates are within the allowed range, and if not generates chunks to follow the Player
+     */
     void verifyChunkState() {
         /*
         Checks each direction, loops through each chunk movement (BAD for teleportation implementations:
@@ -193,6 +243,10 @@ public class GenerateChunks : MonoBehaviour
     }
 
     //Iterates through furthest side destroying it, then iterates through opposite side creating new chunks
+    /**
+     * #### void updateChunks
+     * Iterates through furthest side of the chunk array destroying it, then iterates through opposite side creating new chunks
+     */
     void updateChunks(Direction dir) {
         int dist = (2*viewDist)+1;
         int j;
@@ -294,6 +348,10 @@ public class GenerateChunks : MonoBehaviour
         }
     }
 
+    /**
+     * #### void DestroyTerrainSection
+     * "Destroys" a chunk by returning it to the ObjectPool
+     */
     void DestroyTerrainSection(GameObject terrain)
     {
         chunkPool.disableObject(terrain);

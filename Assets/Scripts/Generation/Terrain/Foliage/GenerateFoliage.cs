@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(GenerateTerrain))]
+/**
+ * ### GenerateFoliage
+ * -------
+ * Utilizes ObjectPools to create dynamic and procedural foliage on a TerrainSection
+ */
 public class GenerateFoliage : MonoBehaviour
 {
     /*
@@ -29,6 +34,11 @@ public class GenerateFoliage : MonoBehaviour
 
     void Start() {}
 
+    /**
+     * #### void LateUpdate
+     * Unity editor event called at the end of every frame
+     * Calculates whether each foliage instance is needed to be rendered based on Player position
+     */
     void LateUpdate()
     {
         if (foliageRenderDist != -1)
@@ -52,6 +62,10 @@ public class GenerateFoliage : MonoBehaviour
         }
     }
 
+    /**
+     * #### void initialize
+     * Sets up foliage generation
+     */
     public void initialize()
     {
         if (foliageClass.GetComponent<MeshFilter>()) //Check if using mesh
@@ -64,11 +78,19 @@ public class GenerateFoliage : MonoBehaviour
         SpawnFoliage();
     }
 
+    /**
+     * #### void setFoliagePool
+     * Mutator method for allowing external allocation of an ObjectPool for foliage generation
+     */
     public void setFoliagePool(ObjectPool pool)
     {
         foliagePool = pool;
     }
 
+    /**
+     * #### void SpawnFoliage
+     * Instantiates foliage instances across the owning terrain area
+     */
     void SpawnFoliage()
     {
         /* Initialization */
@@ -92,6 +114,10 @@ public class GenerateFoliage : MonoBehaviour
         }
     }
 
+    /**
+     * #### void ClearFoliage
+     * Returns all foliage to its ObjectPool
+     */
     void ClearFoliage()
     {
         if (foliageObjs == null) return;
@@ -102,6 +128,10 @@ public class GenerateFoliage : MonoBehaviour
         fCount = 0;
     }
 
+    /**
+     * #### void instantiateFoliageInstance
+     * Creates a foliage instance from its ObjectPool
+     */
     void instantiateFoliageInstance(float xVal, float zVal, int count)
     {
         GameObject foliage = foliagePool.getObject();
